@@ -11,6 +11,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.LinkedList;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -38,7 +39,7 @@ public class ServerConnection implements Runnable{
 		m_objectList = objectList;
 		m_blockedMessage = new LinkedBlockingQueue<>();
 		try {
-			m_socket = new DatagramSocket(20050);
+			m_socket = new DatagramSocket();
 		} catch (SocketException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -49,7 +50,13 @@ public class ServerConnection implements Runnable{
 	public void updateClients(GObject current){
 		ObjectMessage message = new ObjectMessage(Message.Type.ObjectMessage, current);
 		byte[] bytes = MessageConvertion.objectToBytes(message);
-		DatagramPacket packet = new DatagramPacket(bytes, bytes.length);
+		DatagramPacket packet = null;
+		try {
+			packet = new DatagramPacket(bytes, bytes.length, InetAddress.getByName("localhost"), 20050);
+		} catch (UnknownHostException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		try {
 			m_socket.send(packet);
 		} catch (IOException e) {
@@ -68,21 +75,19 @@ public class ServerConnection implements Runnable{
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			Object object = null;
+			Object object = MessageConvertion.bytesToObject(packet.getData());
 			switch(((Message)object).getType()){
 			case ObjectMessage:
-				GObject drawObject = (GObject)object;
+				GObject drawObject = ((ObjectMessage)object).getObject();
 				m_objectList.add(drawObject);
 				break;
 			case StandardMessage:
 				StandardMessage message = (StandardMessage)object;
 				System.out.println(message.getMessage());
 				break;
-			}
-			if(m_blockedMessage.size() > 0){
-				for(Message m : m_blockedMessage){
-					
-				}
+			default:
+				System.err.println("\"" + ((Message)object).getType() + "\" is not a valid type (ServerConnection.run() switch case)");
+				break;
 			}
 			
 		}

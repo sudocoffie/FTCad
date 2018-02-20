@@ -38,6 +38,7 @@ public class GUI extends JFrame implements WindowListener, ActionListener, Mouse
 	private GObject current = null;
 
 	private LinkedList<GObject> objectList = new LinkedList<GObject>();
+	private ServerConnection connection = new ServerConnection(objectList);
 
 	public GUI(int xpos, int ypos) {
 		setSize(xpos, ypos);
@@ -133,6 +134,7 @@ public class GUI extends JFrame implements WindowListener, ActionListener, Mouse
 
 	public void mouseReleased(MouseEvent e) {
 		if (current != null) {
+			connection.updateClients(current);
 			objectList.addLast(current);
 			current = null;
 		}
