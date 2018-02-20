@@ -13,13 +13,13 @@ import java.util.ArrayList;
 public class FrontEnd {
 	private ArrayList<Integer> savePort = new ArrayList<>();
 
-	public FrontEnd(int port) {
+	public FrontEnd() {
 
 		new Thread(new Runnable() {
 			public void run() {
 
 				try {
-					DatagramSocket m_serverSocket = new DatagramSocket(20050);
+					DatagramSocket m_serverSocket = new DatagramSocket(20049);
 					ServerListener(m_serverSocket);
 				} catch (SocketException e) {
 					// TODO Auto-generated catch block
@@ -41,6 +41,10 @@ public class FrontEnd {
 			}
 		}).start();
 	}
+	
+	public static void main(String[] args){
+		new FrontEnd();
+	}
 
 	// kapa tråd for socket
 	// göra två metoder för send recieve från client tråd och server
@@ -56,9 +60,10 @@ public class FrontEnd {
 				if (message.getPort() == i)
 					add = false;
 			}
-			if (add)
+			if (add){
 				savePort.add(message.getPort());
-
+				System.out.println("Client connected port: " + message.getPort());
+			}
 			for (Integer i : savePort)
 				sendMessage(message.getData(), socket, i);
 		}

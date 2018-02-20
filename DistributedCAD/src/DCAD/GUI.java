@@ -135,7 +135,7 @@ public class GUI extends JFrame implements WindowListener, ActionListener, Mouse
 	public void mouseReleased(MouseEvent e) {
 		if (current != null) {
 			connection.updateClients(current);
-			objectList.addLast(current);
+			//objectList.addLast(current);
 			current = null;
 		}
 		repaint();
