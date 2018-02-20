@@ -67,7 +67,7 @@ public class GObject implements Serializable{
 	}
 	
 	public String convertToString(){
-		return s + ";" + c + ";" + x + ";" + y + ";" + width + ";" + height;
+		return s.toString() + ";" + c + ";" + x + ";" + y + ";" + width + ";" + height;
 	}
 
 	public void draw(Graphics g) {

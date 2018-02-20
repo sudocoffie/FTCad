@@ -5,7 +5,7 @@ import java.io.Serializable;
 import DCAD.GObject;
 import Misc.Message.Type;
 
-public class ObjectMessage extends Message implements Serializable{
+public class ObjectMessage extends Message{
 	protected GObject m_object; 
 	public ObjectMessage(Type type, GObject object) {
 		super(type);
@@ -17,4 +17,7 @@ public class ObjectMessage extends Message implements Serializable{
 		//göra om GOjject till object 
 	}
 	
+	public String test(){
+		return "sarf";
+	}
 }

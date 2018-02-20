@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -19,9 +20,7 @@ import Misc.StandardMessage;
 public class ServerConnection implements Runnable{
 	private LinkedList<GObject> m_objectList;
 	private LinkedBlockingQueue<Message> m_blockedMessage;
-	private Socket m_socket;
-	private ObjectOutputStream m_out;
-	private ObjectInputStream m_in;
+	private DatagramSocket m_socket;
 	private volatile boolean m_online = false;
 	
 	public static void main(String[] args){
@@ -29,6 +28,7 @@ public class ServerConnection implements Runnable{
 		ObjectMessage message = new ObjectMessage(Message.Type.ObjectMessage, object);
 		//Message message = new Message(Message.Type.StandardMessage);
 		byte[] bytes = MessageConvertion.objectToBytes(message);
+		//System.out.println(bytes.length);
 		System.out.println(((ObjectMessage)MessageConvertion.bytesToObject(bytes)).getObject().convertToString());
 	}
 	
@@ -41,8 +41,6 @@ public class ServerConnection implements Runnable{
 	private void init() throws IOException{
 		SocketAddress address = new InetSocketAddress("localhost", 25050);
 		m_socket.connect(address);
-		m_out = new ObjectOutputStream(m_socket.getOutputStream());
-		m_in = new ObjectInputStream(m_socket.getInputStream());
 	}
 	
 	public void updateClients(GObject current){
