@@ -16,8 +16,4 @@ public class ObjectMessage extends Message{
 		return m_object;
 		//göra om GOjject till object 
 	}
-	
-	public String test(){
-		return "sarf";
-	}
 }
