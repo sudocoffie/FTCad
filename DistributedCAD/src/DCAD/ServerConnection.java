@@ -4,11 +4,13 @@ import java.awt.Color;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.net.SocketException;
 import java.util.LinkedList;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -35,38 +37,37 @@ public class ServerConnection implements Runnable{
 	public ServerConnection(LinkedList<GObject> objectList){
 		m_objectList = objectList;
 		m_blockedMessage = new LinkedBlockingQueue<>();
+		try {
+			m_socket = new DatagramSocket(20050);
+		} catch (SocketException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		new Thread(this).start();
-	}
-	
-	private void init() throws IOException{
-		SocketAddress address = new InetSocketAddress("localhost", 25050);
-		m_socket.connect(address);
 	}
 	
 	public void updateClients(GObject current){
 		ObjectMessage message = new ObjectMessage(Message.Type.ObjectMessage, current);
-		checkConnected();
-		if(m_online){
-			try {
-				m_out.writeObject(current);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				
-			}
+		byte[] bytes = MessageConvertion.objectToBytes(message);
+		DatagramPacket packet = new DatagramPacket(bytes, bytes.length);
+		try {
+			m_socket.send(packet);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
-	}
-	
-	private void checkConnected(){
-		if(m_socket == null || m_in == null || m_out == null || m_socket.isClosed()){
-			m_online = false;
-		} else
-			m_online = true;
 	}
 
 	@Override
 	public void run() {
 		while (true){
+			DatagramPacket packet = new DatagramPacket(new byte[256], 256);
+			try {
+				m_socket.receive(packet);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			Object object = null;
 			switch(((Message)object).getType()){
 			case ObjectMessage:
@@ -80,12 +81,7 @@ public class ServerConnection implements Runnable{
 			}
 			if(m_blockedMessage.size() > 0){
 				for(Message m : m_blockedMessage){
-					try {
-						m_out.writeObject(m);
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
+					
 				}
 			}
 			

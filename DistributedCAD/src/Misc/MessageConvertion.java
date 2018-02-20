@@ -9,7 +9,7 @@ import java.io.ObjectOutputStream;
 import DCAD.GObject;
 
 public class MessageConvertion {
-	public static byte[] objectToBytes(ObjectMessage object){
+	public static byte[] objectToBytes(Message object){
 		ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
 		ObjectOutputStream stream;
 		try {
