@@ -68,7 +68,7 @@ public class ServerConnection implements Runnable {
 	@Override
 	public void run() {
 		while (true) {
-			DatagramPacket packet = new DatagramPacket(new byte[256], 256);
+			DatagramPacket packet = new DatagramPacket(new byte[1024], 1024);
 			try {
 				m_socket.receive(packet);
 			} catch (IOException e) {

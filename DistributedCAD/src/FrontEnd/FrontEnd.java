@@ -46,8 +46,8 @@ public class FrontEnd {
 		new FrontEnd();
 	}
 
-	// kapa tråd for socket
-	// göra två metoder för send recieve från client tråd och server
+	// kapa trï¿½d for socket
+	// gï¿½ra tvï¿½ metoder fï¿½r send recieve frï¿½n client trï¿½d och server
 	private void ServerListener(DatagramSocket socket) {
 
 	}
@@ -79,19 +79,16 @@ public class FrontEnd {
 		} catch (UnknownHostException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
-		}
-		// skicka meedeland e til alla clienter
-		catch (IOException e) {
+		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
 	}
 
 	public DatagramPacket recieveMessage(DatagramSocket socket) {
-		// ta emot meddelande från en client
+		// ta emot meddelande frï¿½n en client
 
-		byte[] buf = new byte[256];
+		byte[] buf = new byte[1024];
 		DatagramPacket marshing_packet = new DatagramPacket(buf, buf.length);
 		try {
 			socket.receive(marshing_packet);
