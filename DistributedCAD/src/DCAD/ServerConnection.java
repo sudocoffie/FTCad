@@ -50,15 +50,12 @@ public class ServerConnection implements Runnable {
 	public void updateClients(GObject current) {
 		ObjectMessage message = new ObjectMessage(Message.Type.ObjectMessage, current);
 		byte[] bytes = MessageConvertion.objectToBytes(message);
-		DatagramPacket packet = null;
 		try {
-			packet = new DatagramPacket(bytes, bytes.length, InetAddress.getByName("localhost"), 20050);
+			DatagramPacket packet = new DatagramPacket(bytes, bytes.length, InetAddress.getByName("localhost"), 20050);
+			m_socket.send(packet);
 		} catch (UnknownHostException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
-		}
-		try {
-			m_socket.send(packet);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
