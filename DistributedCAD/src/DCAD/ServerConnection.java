@@ -24,19 +24,15 @@ public class ServerConnection implements Runnable {
 	private LinkedList<GObject> m_objectList;
 	private LinkedBlockingQueue<Message> m_blockedMessage;
 	private DatagramSocket m_socket;
+	private String m_address;
+	private int m_port;
 	private volatile boolean m_online = false;
-
-	public static void main(String[] args) {
-		GObject object = new GObject(Shape.FILLED_OVAL, Color.RED, 23, 23, 23, 4);
-		ObjectMessage message = new ObjectMessage(Message.Type.ObjectMessage, object);
-		// Message message = new Message(Message.Type.StandardMessage);
-		byte[] bytes = MessageConvertion.objectToBytes(message);
-		// System.out.println(bytes.length);
-		System.out.println(((ObjectMessage) MessageConvertion.bytesToObject(bytes)).getObject().convertToString());
-	}
-
 	public ServerConnection(LinkedList<GObject> objectList) {
 		m_objectList = objectList;
+	
+		m_address = "localhost";
+		
+		
 		m_blockedMessage = new LinkedBlockingQueue<>();
 		try {
 			m_socket = new DatagramSocket();
@@ -44,11 +40,12 @@ public class ServerConnection implements Runnable {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		m_port = m_socket.getPort();
 		new Thread(this).start();
 	}
 
 	public void updateClients(GObject current) {
-		ObjectMessage message = new ObjectMessage(Message.Type.ObjectMessage, current);
+		ObjectMessage message = new ObjectMessage(Message.Type.ObjectMessage, m_address, m_port, current);
 		byte[] bytes = MessageConvertion.objectToBytes(message);
 		DatagramPacket packet = null;
 		try {
