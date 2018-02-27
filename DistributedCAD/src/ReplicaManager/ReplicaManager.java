@@ -13,7 +13,7 @@ import java.net.SocketException;
 import java.util.ArrayList;
 
 public class ReplicaManager {
-	private ArrayList<ServerConnection> m_replicaConnections;
+	private ArrayList<ReplicaConnection> m_replicaConnections;
 	ArrayList<InetSocketAddress> m_replicaAdresses;
 	private int m_id;
 	
@@ -34,7 +34,9 @@ public class ReplicaManager {
 			while((line = reader.readLine()) != null){
 				address = line.split(" ")[0];
 				port = Integer.parseInt(line.split(" ")[1]);
+				System.out.println(address + " " + port);
 				m_replicaAdresses.add(new InetSocketAddress(address, port));
+				System.out.println(id + ": 0");
 			}
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
@@ -43,11 +45,15 @@ public class ReplicaManager {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		System.out.println(id + ": 1");
 		if(id != m_replicaAdresses.size() - 1){
+			System.out.println(id + ": 2");
 			try {
+				System.out.println(m_replicaAdresses.toString());
 				ServerSocket serverSocket = new ServerSocket(m_replicaAdresses.get(id).getPort());
 				for(int i = id + 1; i < m_replicaAdresses.size(); i++){
-					m_replicaConnections.add(new ServerConnection(serverSocket.accept()));
+					m_replicaConnections.add(new ReplicaConnection(serverSocket.accept()));
+					System.out.println(id + ": 3");
 				}
 				serverSocket.close();
 			} catch (IOException e) {
@@ -57,10 +63,12 @@ public class ReplicaManager {
 		}
 		if(id != 0){
 			Socket socket = null;
+			System.out.println(id + ": 4");
 			for(int i = 0; i < id; i++){
 				boolean connected = false;
 				while(!connected){
 					try {
+						System.out.println(id + ": 5");
 						socket = new Socket();
 						socket.connect(m_replicaAdresses.get(i));
 						connected = true;
@@ -75,9 +83,17 @@ public class ReplicaManager {
 						}
 					}
 				}
-				m_replicaConnections.add(new ServerConnection(socket));
+				m_replicaConnections.add(new ReplicaConnection(socket));
 			}
 		}
+		System.out.println(id + ": 6");
+		try {
+			Thread.sleep(100 * id);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		int primary = new Election(m_replicaConnections).start(m_id);
 	}
 	
 	private void initFrontend(){
