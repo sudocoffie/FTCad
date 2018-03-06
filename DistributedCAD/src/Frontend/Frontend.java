@@ -1,4 +1,4 @@
-package FrontEnd;
+package Frontend;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;

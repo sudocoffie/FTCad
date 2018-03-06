@@ -26,7 +26,6 @@ public class Election {
 			try {
 				Thread.sleep(10);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			
@@ -51,9 +50,9 @@ public class Election {
 							return Integer.parseInt(electionMessage[2]);
 						default:
 							if(Integer.parseInt(electionMessage[1]) > id){
-								c.send(new StandardMessage(Type.StandardMessage, "election yes"));
+								c.send(new StandardMessage(Type.StandardMessage, "", 0, "election yes"));
 							} else{
-								c.send(new StandardMessage(Type.StandardMessage, "election no"));
+								c.send(new StandardMessage(Type.StandardMessage, "", 0, "election no"));
 								startCampaign(id);
 							}
 							break;
@@ -69,14 +68,14 @@ public class Election {
 	
 	private void wonElection(int id){
 		for(ReplicaConnection c : m_connections)
-			c.send(new StandardMessage(Message.Type.StandardMessage, "election won " + id));
+			c.send(new StandardMessage(Message.Type.StandardMessage, "", 0, "election won " + id));
 		System.out.println("I won");
 	}
 	
 	private void startCampaign(int id){
 		if(!m_startedcampaign){
 			for(ReplicaConnection c : m_connections)
-				c.send(new StandardMessage(Message.Type.StandardMessage, "election " + id));
+				c.send(new StandardMessage(Message.Type.StandardMessage, "", 0, "election " + id));
 			m_startedcampaign = true;
 		}
 	}
