@@ -4,23 +4,28 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.Inet4Address;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 
 public class ReplicaManager {
 	private ArrayList<ReplicaConnection> m_replicaConnections;
 	ArrayList<InetSocketAddress> m_replicaAdresses;
 	private int m_id;
-	
-	public static void main(String[] args){
+	private int m_replicaPort = 0;
+	private InetAddress m_replicaAddress;
+	public static void main(String[] args) {
 		new ReplicaManager(Integer.parseInt(args[0]));
 	}
-	
+
 	public ReplicaManager(int id) {
 		m_id = id;
 		System.out.println(id);
@@ -31,7 +36,7 @@ public class ReplicaManager {
 		try {
 			BufferedReader reader = new BufferedReader(new FileReader("src\\ReplicaManager\\ReplicaConfig"));
 			String line;
-			while((line = reader.readLine()) != null){
+			while ((line = reader.readLine()) != null) {
 				address = line.split(" ")[0];
 				port = Integer.parseInt(line.split(" ")[1]);
 				System.out.println(address + " " + port);
@@ -46,12 +51,12 @@ public class ReplicaManager {
 			e.printStackTrace();
 		}
 		System.out.println(id + ": 1");
-		if(id != m_replicaAdresses.size() - 1){
+		if (id != m_replicaAdresses.size() - 1) {
 			System.out.println(id + ": 2");
 			try {
 				System.out.println(m_replicaAdresses.toString());
 				ServerSocket serverSocket = new ServerSocket(m_replicaAdresses.get(id).getPort());
-				for(int i = id + 1; i < m_replicaAdresses.size(); i++){
+				for (int i = id + 1; i < m_replicaAdresses.size(); i++) {
 					m_replicaConnections.add(new ReplicaConnection(serverSocket.accept()));
 					System.out.println(id + ": 3");
 				}
@@ -61,12 +66,12 @@ public class ReplicaManager {
 				e.printStackTrace();
 			}
 		}
-		if(id != 0){
+		if (id != 0) {
 			Socket socket = null;
 			System.out.println(id + ": 4");
-			for(int i = 0; i < id; i++){
+			for (int i = 0; i < id; i++) {
 				boolean connected = false;
-				while(!connected){
+				while (!connected) {
 					try {
 						System.out.println(id + ": 5");
 						socket = new Socket();
@@ -74,7 +79,7 @@ public class ReplicaManager {
 						connected = true;
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
-						//e.printStackTrace();
+						// e.printStackTrace();
 						try {
 							Thread.sleep(100);
 						} catch (InterruptedException e1) {
@@ -95,14 +100,14 @@ public class ReplicaManager {
 		}
 		int primary = new Election(m_replicaConnections).start(m_id);
 	}
-	
-	private void initFrontend(){
+
+	private void initFrontend() {
 		String address = null;
 		int port = 0;
 		try {
 			BufferedReader reader = new BufferedReader(new FileReader("src\\Frontend\\FrontendConfig"));
 			String line;
-			while((line = reader.readLine()) != null){
+			while ((line = reader.readLine()) != null) {
 				String[] config = line.split(" ");
 				address = config[0];
 				port = Integer.parseInt(config[1]);
@@ -117,16 +122,48 @@ public class ReplicaManager {
 		}
 		SocketAddress frontendAddress = new InetSocketAddress(address, port);
 		try {
-			DatagramSocket socket = new DatagramSocket();
-			socket.connect(frontendAddress);
-			listenFrontend(socket);
+			DatagramSocket m_frontendSocket = new DatagramSocket();
+			m_frontendSocket.connect(frontendAddress);
+			listenFrontend(m_frontendSocket);
 		} catch (SocketException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 	}
-	
-	private void listenFrontend(DatagramSocket socket){
-		
+
+	public void sendMessage(byte[] message, DatagramSocket socket, InetAddress address, int port) {
+		byte[] buf = message;
+		DatagramPacket m_packet;
+		try {
+			m_packet = new DatagramPacket(buf, buf.length, address, port);
+			socket.send(m_packet);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
+
+	public DatagramPacket recieveMessage(DatagramSocket socket) {
+		byte[] buf = new byte[1024];
+		DatagramPacket m_packet = new DatagramPacket(buf, buf.length);
+		try {
+			socket.receive(m_packet);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return m_packet;
+
+	}
+
+	private void listenFrontend(DatagramSocket socket) {
+		DatagramPacket m_packet = recieveMessage(socket);
+		//fix this later
+		if(m_packet.getPort() != m_replicaPort  && !m_packet.getAddress().equals(m_replicaAddress)) {
+			m_replicaPort = m_packet.getPort();
+			m_replicaAddress= m_packet.getAddress();
+		}
+		sendMessage(m_packet.getData(), socket, m_replicaAddress, m_replicaPort);
 	}
 }
