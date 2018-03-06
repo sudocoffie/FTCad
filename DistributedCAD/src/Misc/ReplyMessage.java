@@ -1,21 +1,19 @@
 package Misc;
 
+import java.net.InetAddress;
+import java.util.UUID;
+
 import DCAD.GObject;
 
 public class ReplyMessage extends Message{
-	protected String m_replyMessage;
-	public ReplyMessage(Type type,String address, int port, String replay) {
+	protected UUID m_replyId;
+	public ReplyMessage(Type type, InetAddress address, int port, UUID id) {
 		super(type, address, port);
-		m_replyMessage = replay;
+		m_replyId = id;
 		// TODO Auto-generated constructor stub
 	}
 	
-	public String getReplyMessage(){
-		return m_replyMessage;
+	public UUID getReplyId() {
+		return m_replyId;
 	}
-	
-	//skoll meddelenad e
-	// objectmeddeland 
-	//
-
 }
