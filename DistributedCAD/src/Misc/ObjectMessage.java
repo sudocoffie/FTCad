@@ -13,6 +13,7 @@ public class ObjectMessage extends Message{
 		m_object = object;
 		// TODO Auto-generated constructor stub
 	}
+	
 	public GObject getObject(){
 		return m_object;
 		//göra om GOjject till object 

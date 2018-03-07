@@ -127,14 +127,15 @@ public class GUI extends JFrame implements WindowListener, ActionListener, Mouse
 		// User clicks the right mouse button:
 		// undo an operation by removing the most recently added object.
 		if (e.getButton() == MouseEvent.BUTTON3 && objectList.size() > 0) {
-			objectList.removeLast();
+			connection.removeObject(objectList.getLast());
+			//objectList.removeLast();
 		}
 		repaint();
 	}
 
 	public void mouseReleased(MouseEvent e) {
 		if (current != null) {
-			connection.updateClients(current);
+			connection.addObject(current);
 			//objectList.addLast(current);
 			current = null;
 		}

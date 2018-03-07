@@ -32,7 +32,6 @@ public class ServerConnection implements Runnable {
 	private DatagramSocket m_socket;
 	private InetAddress m_address;
 	private int m_port;
-	private volatile boolean m_online = false;
 	public ServerConnection(LinkedList<GObject> objectList) {
 		m_objectList = objectList;
 		
@@ -65,35 +64,44 @@ public class ServerConnection implements Runnable {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		m_port = m_socket.getPort();
 		new Thread(this).start();
+		StandardMessage message = new StandardMessage(Message.Type.StandardMessage, "join");
+		sendUntilResponse(message);
+	}
+	
+	public void removeObject(GObject remove) {
+		StandardMessage message = new StandardMessage(Message.Type.StandardMessage, "remove " + remove.getId().toString());
+		sendUntilResponse(message);
 	}
 
-	public void updateClients(GObject current) {
+	public void addObject(GObject current) {
 		ObjectMessage message = new ObjectMessage(Message.Type.ObjectMessage, m_address, m_port, current);
+		sendUntilResponse(message);
+	}
+
+	private void sendUntilResponse(Message message) {
 		UUID id = message.getId();
 		System.out.println(id);
-		send(message);
 		boolean recievedResponse = false;
 		while(!recievedResponse) {
 			try {
+				send(message);
 				ReplyMessage response = (ReplyMessage) m_blockedMessage.poll(1000, TimeUnit.MILLISECONDS);
 				if(response != null && response.getReplyId().equals(id)) {
 					recievedResponse = true;
 					System.out.println(response.getReplyId());
-				}else
-					send(message);
+				}
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
 	}
-
+	
 	private void send(Message message) {
 		byte[] bytes = MessageConvertion.objectToBytes(message);
 		try {
-			DatagramPacket packet = new DatagramPacket(bytes, bytes.length, InetAddress.getByName("localhost"), 20050);
+			DatagramPacket packet = new DatagramPacket(bytes, bytes.length, m_address, m_port);
 			m_socket.send(packet);
 		} catch (UnknownHostException e1) {
 			// TODO Auto-generated catch block
@@ -119,13 +127,28 @@ public class ServerConnection implements Runnable {
 				switch (((Message) object).getType()) {
 				case ObjectMessage:
 					GObject drawObject = ((ObjectMessage) object).getObject();
-					m_objectList.add(drawObject);
+					boolean add = true;
+					for(GObject o : m_objectList) {
+						if(o.getId().equals(drawObject.getId()))
+							add = false;
+					}
+					if(add)
+						m_objectList.add(drawObject);
 					break;
 				case StandardMessage:
 					StandardMessage message = (StandardMessage) object;
+					if(message.getMessage().startsWith("remove")) {
+						GObject remove = null;
+						for(GObject o : m_objectList) {
+							if(o.getId().toString().equals(message.getMessage().split(" ")[1]))
+								remove = o;
+						}
+						m_objectList.remove(remove);
+					}
 					System.out.println(message.getMessage());
 					break;
 				case ReplyMessage:
+					System.out.println("reply");
 					if(!m_blockedMessage.offer((ReplyMessage)object))
 						System.err.println("m_blockedMessage full! (ServerConnection.run() switch case)");
 					break;

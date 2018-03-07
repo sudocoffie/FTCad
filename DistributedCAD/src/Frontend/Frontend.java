@@ -44,16 +44,13 @@ public class Frontend {
 		}
 		new Thread(new Runnable() {
 			public void run() {
-
 				try {
-
 					m_serverSocket = new DatagramSocket(m_serverPort);
 					ServerListener();
 				} catch (SocketException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-
 			}
 		}).start();
 		new Thread(new Runnable() {
@@ -61,7 +58,6 @@ public class Frontend {
 				try {
 					m_clientSocket = new DatagramSocket(m_clientPort);
 					ClientListener();
-					
 				} catch (SocketException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -94,19 +90,17 @@ public class Frontend {
 			DatagramPacket packet = recieveMessage(m_clientSocket);
 			// Reply to a message, will be similar in replica
 			//Message message = (Message)MessageConvertion.bytesToObject(packet.getData());
+			//System.out.println("Type: " + message.getType());
 			//ReplyMessage reply = new ReplyMessage(Type.ReplyMessage, packet.getAddress(), packet.getPort(), message.getId());
 			//sendMessage(MessageConvertion.objectToBytes(reply), m_clientSocket, packet.getAddress(), packet.getPort());
 			sendMessage(packet.getData(), m_serverSocket, m_address, m_port);
 		}
-
 	}
 
 	public void sendMessage(byte[] message, DatagramSocket socket, InetAddress address, int port) {
 		byte[] buf = message;
 		DatagramPacket marshing_packet;
-		
 		try {
-		
 			marshing_packet = new DatagramPacket(buf, buf.length, address, port);
 			socket.send(marshing_packet);
 		} catch (UnknownHostException e1) {

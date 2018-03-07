@@ -2,8 +2,6 @@ package Misc;
 
 import java.io.Serializable;
 import java.net.InetAddress;
-import java.net.SocketAddress;
-import java.util.ArrayList;
 import java.util.UUID;
 
 import DCAD.GObject;

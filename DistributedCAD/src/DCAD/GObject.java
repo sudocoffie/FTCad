@@ -8,6 +8,7 @@ package DCAD;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.io.Serializable;
+import java.util.UUID;
 
 /**
  *
@@ -17,6 +18,7 @@ public class GObject implements Serializable{
 	private Shape s;
 	private Color c;
 	private int x, y, width, height;
+	private UUID m_id;
 	// Note that the x and y coordinates are relative to the top left corner of
 	// the
 	// graphics context in which the object is to be drawn - NOT the top left
@@ -64,6 +66,14 @@ public class GObject implements Serializable{
 
 	public int getY() {
 		return y;
+	}
+	
+	public UUID getId() {
+		return m_id;
+	}
+	
+	public void setId(UUID id) {
+		m_id = id;
 	}
 	
 	public String convertToString(){
