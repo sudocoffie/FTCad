@@ -16,12 +16,16 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 
+import Misc.Message;
+import Misc.Message.Type;
+import Misc.MessageConvertion;
+import Misc.ReplyMessage;
+
 public class ReplicaManager {
 	private ArrayList<ReplicaConnection> m_replicaConnections;
 	ArrayList<InetSocketAddress> m_replicaAdresses;
 	private int m_id;
-	private int m_replicaPort = 0;
-	private InetAddress m_replicaAddress;
+	
 	public static void main(String[] args) {
 		new ReplicaManager(Integer.parseInt(args[0]));
 	}
@@ -101,8 +105,8 @@ public class ReplicaManager {
 		int primary = new Election(m_replicaConnections).start(m_id);
 	}
 
-	private void initFrontend() {
-		String address = null;
+	public void initFrontend() {
+		String address = "";
 		int port = 0;
 		try {
 			BufferedReader reader = new BufferedReader(new FileReader("src\\Frontend\\FrontendConfig"));
@@ -122,20 +126,20 @@ public class ReplicaManager {
 		}
 		SocketAddress frontendAddress = new InetSocketAddress(address, port);
 		try {
-			DatagramSocket m_frontendSocket = new DatagramSocket();
-			m_frontendSocket.connect(frontendAddress);
-			listenFrontend(m_frontendSocket);
+			DatagramSocket frontendSocket = new DatagramSocket();
+			frontendSocket.connect(frontendAddress);
+			new Primary(m_replicaConnections,frontendSocket);
 		} catch (SocketException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 	}
 
-	public void sendMessage(byte[] message, DatagramSocket socket, InetAddress address, int port) {
+	public void sendMessage(byte[] message, DatagramSocket socket, String address, int port) {
 		byte[] buf = message;
 		DatagramPacket m_packet;
 		try {
-			m_packet = new DatagramPacket(buf, buf.length, address, port);
+			m_packet = new DatagramPacket(buf, buf.length, port);
 			socket.send(m_packet);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -155,15 +159,5 @@ public class ReplicaManager {
 		}
 		return m_packet;
 
-	}
-
-	private void listenFrontend(DatagramSocket socket) {
-		DatagramPacket m_packet = recieveMessage(socket);
-		//fix this later
-		if(m_packet.getPort() != m_replicaPort  && !m_packet.getAddress().equals(m_replicaAddress)) {
-			m_replicaPort = m_packet.getPort();
-			m_replicaAddress= m_packet.getAddress();
-		}
-		sendMessage(m_packet.getData(), socket, m_replicaAddress, m_replicaPort);
 	}
 }

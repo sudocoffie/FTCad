@@ -65,7 +65,7 @@ public class ReplicaConnection {
 		return null;
 	}
 	
-	private void recieveMessages(){
+	public void recieveMessages(){
 		while(true){
 			try {
 				Message message = (Message)m_inStream.readObject();
