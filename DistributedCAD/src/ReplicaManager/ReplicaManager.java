@@ -137,19 +137,4 @@ public class ReplicaManager {
 			e1.printStackTrace();
 		}
 	}
-
-	
-
-	public DatagramPacket recieveMessage(DatagramSocket socket) {
-		byte[] buf = new byte[1024];
-		DatagramPacket m_packet = new DatagramPacket(buf, buf.length);
-		try {
-			socket.receive(m_packet);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		return m_packet;
-
-	}
 }

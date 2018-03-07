@@ -30,6 +30,14 @@ public abstract class Message implements Serializable {
 	public int getPort() {
 		return m_port;
 	}
+	
+	public void setAddress(InetAddress address) {
+		m_address = address;
+	}
+	
+	public void setPort(int port) {
+		m_port = port;
+	}
 
 	public Type getType() {
 		return m_type;

@@ -25,6 +25,7 @@ public class Frontend {
 	private InetAddress m_address;
 	private int m_port;
 	private DatagramSocket m_clientSocket, m_serverSocket;
+
 	public Frontend() {
 		try {
 			BufferedReader frontendConfig = new BufferedReader(new FileReader("src\\Frontend\\FrontendConfig"));
@@ -64,7 +65,7 @@ public class Frontend {
 				}
 			}
 		}).start();
-		
+
 	}
 
 	public static void main(String[] args) {
@@ -74,25 +75,30 @@ public class Frontend {
 	// kapa tr�d for socket
 	// g�ra tv� metoder f�r send recieve fr�n client tr�d och server
 	private void ServerListener() {
-		DatagramPacket packet = recieveMessage(m_serverSocket);
-		// send to clients
-		if(packet.getPort() != m_port)
-			m_port = packet.getPort();
-		if(!packet.getAddress().equals(m_address))
-			m_address = packet.getAddress();
-		Message message = (Message)MessageConvertion.bytesToObject(packet.getData());
-		sendMessage(packet.getData(), m_clientSocket, message.getAddress(), message.getPort());
-
+		while (true) {
+			DatagramPacket packet = recieveMessage(m_serverSocket);
+			// send to clients
+			if (packet.getPort() != m_port)
+				m_port = packet.getPort();
+			if (!packet.getAddress().equals(m_address))
+				m_address = packet.getAddress();
+			Message message = (Message) MessageConvertion.bytesToObject(packet.getData());
+			System.out.println("S Type: " + message.getType());
+			if (message.getAddress() != null && message.getPort() != -1)
+				sendMessage(packet.getData(), m_clientSocket, message.getAddress(), message.getPort());
+		}
 	}
 
 	private void ClientListener() {
 		while (true) {
 			DatagramPacket packet = recieveMessage(m_clientSocket);
 			// Reply to a message, will be similar in replica
-			//Message message = (Message)MessageConvertion.bytesToObject(packet.getData());
-			//System.out.println("Type: " + message.getType());
-			//ReplyMessage reply = new ReplyMessage(Type.ReplyMessage, packet.getAddress(), packet.getPort(), message.getId());
-			//sendMessage(MessageConvertion.objectToBytes(reply), m_clientSocket, packet.getAddress(), packet.getPort());
+			Message message = (Message) MessageConvertion.bytesToObject(packet.getData());
+			System.out.println("C Type: " + message.getType());
+			// ReplyMessage reply = new ReplyMessage(Type.ReplyMessage, packet.getAddress(),
+			// packet.getPort(), message.getId());
+			// sendMessage(MessageConvertion.objectToBytes(reply), m_clientSocket,
+			// packet.getAddress(), packet.getPort());
 			sendMessage(packet.getData(), m_serverSocket, m_address, m_port);
 		}
 	}
@@ -100,6 +106,7 @@ public class Frontend {
 	public void sendMessage(byte[] message, DatagramSocket socket, InetAddress address, int port) {
 		byte[] buf = message;
 		DatagramPacket marshing_packet;
+		System.out.println(address + " " + port);
 		try {
 			marshing_packet = new DatagramPacket(buf, buf.length, address, port);
 			socket.send(marshing_packet);
