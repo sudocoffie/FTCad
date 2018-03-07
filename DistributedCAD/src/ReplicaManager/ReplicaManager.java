@@ -103,6 +103,9 @@ public class ReplicaManager {
 			e.printStackTrace();
 		}
 		int primary = new Election(m_replicaConnections).start(m_id);
+		if(primary == m_id) {
+			initFrontend();
+		}
 	}
 
 	public void initFrontend() {
@@ -124,29 +127,18 @@ public class ReplicaManager {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		SocketAddress frontendAddress = new InetSocketAddress(address, port);
+		InetSocketAddress frontendAddress = new InetSocketAddress(address, port);
 		try {
 			DatagramSocket frontendSocket = new DatagramSocket();
 			frontendSocket.connect(frontendAddress);
-			new Primary(m_replicaConnections,frontendSocket);
+			new Primary(m_replicaConnections,frontendSocket,frontendAddress);
 		} catch (SocketException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
 	}
 
-	public void sendMessage(byte[] message, DatagramSocket socket, String address, int port) {
-		byte[] buf = message;
-		DatagramPacket m_packet;
-		try {
-			m_packet = new DatagramPacket(buf, buf.length, port);
-			socket.send(m_packet);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-	}
+	
 
 	public DatagramPacket recieveMessage(DatagramSocket socket) {
 		byte[] buf = new byte[1024];

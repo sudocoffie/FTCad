@@ -3,7 +3,10 @@ package ReplicaManager;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.UUID;
@@ -12,15 +15,19 @@ import DCAD.GObject;
 import Misc.Message;
 import Misc.MessageConvertion;
 import Misc.ObjectMessage;
+import Misc.ReplyMessage;
 import Misc.StandardMessage;
 
 public class Primary implements Runnable {
 	private ArrayList<ReplicaConnection> m_connection = new ArrayList<>();
 	private DatagramSocket m_socket;
 	private ArrayList<GObject> m_object = new ArrayList<>();
-	public Primary(ArrayList<ReplicaConnection> connections, DatagramSocket socket) {
+	private ArrayList<String> m_clients = new ArrayList<>();
+	private InetSocketAddress m_address;
+	public Primary(ArrayList<ReplicaConnection> connections, DatagramSocket socket, InetSocketAddress address) {
 		m_connection = connections;
 		m_socket = socket;
+		m_address = address;
 		new Thread(this).start();
 	}
 
@@ -35,11 +42,25 @@ public class Primary implements Runnable {
 			switch (message.getType()) {
 			case StandardMessage:
 				StandardMessage standardMessage = (StandardMessage) message;
+				
 				if(standardMessage.getMessage().startsWith("join")) {
-					System.out.println("you connected" + standardMessage.getMessage());
+					boolean addClient = true;
+					for(String client : m_clients) {
+						if (standardMessage.getId().toString().equals(client.split(" ")[0])) {
+							addClient = false;
+						}
+					}
+					if(addClient) {
+					String client = standardMessage.getId().toString() + " " + standardMessage.getAddress() + " " + standardMessage.getPort();
+					m_clients.add(client);
+					sendToAllBackups(new StandardMessage(Message.Type.StandardMessage, null, -1, client));
+					System.out.println("you are connected " + standardMessage.getMessage());
+					}
 				}
 				else if(standardMessage.getMessage().startsWith("remove")) {
+					removeMessage(standardMessage);
 					System.out.println("you removed " + standardMessage.getMessage());
+					
 				}
 				//join ett meddelande "join"
 				//remove med ett UUID
@@ -48,19 +69,27 @@ public class Primary implements Runnable {
 				boolean addObject = true;
 				ObjectMessage objMessage = (ObjectMessage) message;
 				for(GObject object : m_object) {
-					if(object.getId().equals())
+					if(object.getId().equals(objMessage.getId())) {
+						addObject = false;
+					}
 				}
-				
-				if(onjMessage.getObject()) {
-					
+				if (addObject) {
+					GObject object = objMessage.getObject();
+					object.seId(ObjectMessage.getId());
+					m_object.add(object);
+				//send to all backups and clients
+					ObjectMessage sendMessage = new ObjectMessage(Message.Type.ObjectMessage,null,-1,object);
+					sendToAllBackups(sendMessage);
+					sendToClients(sendMessage);
 				}
-				
 				break;
 			case ReplyMessage:
 				break;
 			default:
 				break;
 			}
+			ReplyMessage reply = new ReplyMessage(Message.Type.ReplyMessage, message.getAddress(), message.getPort(), message.getId());
+			sendMessage(MessageConvertion.objectToBytes(reply), m_socket, m_address.getAddress(), m_address.getPort());
 			// join
 			// stand
 			// object
@@ -72,27 +101,47 @@ public class Primary implements Runnable {
 		}
 	}
 
-	private void sendToAllBackups(Socket socket) {
+	private void sendToAllBackups(Message message) {
 		// send backups
-		ReplicaConnection instance = new ReplicaConnection(socket);
 
 		for (ReplicaConnection searchForBackup : m_connection) {
 			if (searchForBackup.getState() == ReplicaConnection.State.BACKUP) {
-				Message message = (Message) MessageConvertion.bytesToObject();
-				instance.send(message);
+				searchForBackup.send(message);
 			}
 		}
 	}
-
-	public void remove() {
-		if(message.getMessage().startsWith("remove")) {
-            GObject remove = null;
-            for(GObject o : m_objectList) {
-                if(o.getId().equals(message.getMessage().split(" ")[1]))
-                    remove = o;
-            }
-            m_objectList.remove(remove);
-        }
+	private void sendToClients(Message message) {
+		
+		for (String client : m_clients) {
+			sendMessage(MessageConvertion.objectToBytes(message),m_socket, m_address.getAddress(), m_address.getPort());
+		}
 	}
+	public void sendMessage(byte[] message, DatagramSocket socket, InetAddress address, int port) {
+		byte[] buf = message;
+		DatagramPacket m_packet;
+		try {
+			m_packet = new DatagramPacket(buf, buf.length, address, port);
+			socket.send(m_packet);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+	}
+	private void removeMessage(StandardMessage message) {
+		// TODO Auto-generated method stub
+		 GObject remove = null;
+         for(GObject o : m_object) {
+             if(o.getId().equals(message.getMessage().split(" ")[1]))
+                 remove = o;
+         }
+         m_object.remove(remove);
+         if(remove !=null) {
+        	 sendToAllBackups(message);
+        	 sendToClients(message);
+         }
+         
+     }
+	
 
 }
