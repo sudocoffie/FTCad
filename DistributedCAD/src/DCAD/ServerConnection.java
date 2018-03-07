@@ -65,17 +65,17 @@ public class ServerConnection implements Runnable {
 			e.printStackTrace();
 		}
 		new Thread(this).start();
-		StandardMessage message = new StandardMessage(Message.Type.StandardMessage, "join");
+		StandardMessage message = new StandardMessage(Message.Type.StandardMessage, m_socket.getLocalAddress(), m_socket.getLocalPort(), "join");
 		sendUntilResponse(message);
 	}
 	
 	public void removeObject(GObject remove) {
-		StandardMessage message = new StandardMessage(Message.Type.StandardMessage, "remove " + remove.getId().toString());
+		StandardMessage message = new StandardMessage(Message.Type.StandardMessage, m_socket.getLocalAddress(), m_socket.getLocalPort(), "remove " + remove.getId().toString());
 		sendUntilResponse(message);
 	}
 
 	public void addObject(GObject current) {
-		ObjectMessage message = new ObjectMessage(Message.Type.ObjectMessage, m_address, m_port, current);
+		ObjectMessage message = new ObjectMessage(Message.Type.ObjectMessage, m_socket.getLocalAddress(), m_socket.getLocalPort(), current);
 		sendUntilResponse(message);
 	}
 
