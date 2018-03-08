@@ -2,6 +2,7 @@ package ReplicaManager;
 
 import java.util.ArrayList;
 
+import DCAD.ServerConnection;
 import Misc.Message;
 import Misc.Message.Type;
 import Misc.StandardMessage;
@@ -18,7 +19,7 @@ public class Election {
 		}
 	}
 	
-	public int start(int id){
+	public ReplicaConnection start(int id){
 		StandardMessage message;
 		boolean electionStarted = false;
 		int yesCounter = 0;
@@ -39,7 +40,7 @@ public class Election {
 							System.out.println(yesCounter + " " + m_connections.size());
 							if(yesCounter == m_connections.size()){
 								wonElection(id);
-								return id;
+								return null;
 							}
 							break;
 						case "no":
@@ -47,12 +48,12 @@ public class Election {
 							break;
 						case "won":
 							System.out.println(Integer.parseInt(electionMessage[2]) + " won");
-							return Integer.parseInt(electionMessage[2]);
+							return c;
 						default:
 							if(Integer.parseInt(electionMessage[1]) > id){
-								c.send(new StandardMessage(Type.StandardMessage, "election yes"));
+								c.send(new StandardMessage("election yes"));
 							} else{
-								c.send(new StandardMessage(Type.StandardMessage, "election no"));
+								c.send(new StandardMessage("election no"));
 								startCampaign(id);
 							}
 							break;
@@ -68,14 +69,14 @@ public class Election {
 	
 	private void wonElection(int id){
 		for(ReplicaConnection c : m_connections)
-			c.send(new StandardMessage(Message.Type.StandardMessage, "election won " + id));
+			c.send(new StandardMessage("election won " + id));
 		System.out.println("I won");
 	}
 	
 	private void startCampaign(int id){
 		if(!m_startedcampaign){
 			for(ReplicaConnection c : m_connections)
-				c.send(new StandardMessage(Message.Type.StandardMessage, "election " + id));
+				c.send(new StandardMessage("election " + id));
 			m_startedcampaign = true;
 		}
 	}

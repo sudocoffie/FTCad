@@ -1,5 +1,6 @@
 package Frontend;
 
+import java.awt.TrayIcon.MessageType;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -17,6 +18,7 @@ import Misc.Message;
 import Misc.Message.Type;
 import Misc.MessageConvertion;
 import Misc.ReplyMessage;
+import Misc.StandardMessage;
 
 public class Frontend {
 	private ArrayList<Integer> savePort = new ArrayList<>();
@@ -84,6 +86,8 @@ public class Frontend {
 				m_address = packet.getAddress();
 			Message message = (Message) MessageConvertion.bytesToObject(packet.getData());
 			System.out.println("S Type: " + message.getType());
+			if(message.getType() == Message.Type.STANDARDMESSAGE)
+				System.out.println(((StandardMessage)message).getMessage());
 			if (message.getAddress() != null && message.getPort() != -1)
 				sendMessage(packet.getData(), m_clientSocket, message.getAddress(), message.getPort());
 		}
@@ -95,6 +99,8 @@ public class Frontend {
 			// Reply to a message, will be similar in replica
 			Message message = (Message) MessageConvertion.bytesToObject(packet.getData());
 			System.out.println("C Type: " + message.getType());
+			if(message.getType() == Message.Type.STANDARDMESSAGE)
+				System.out.println(((StandardMessage)message).getMessage());
 			// ReplyMessage reply = new ReplyMessage(Type.ReplyMessage, packet.getAddress(),
 			// packet.getPort(), message.getId());
 			// sendMessage(MessageConvertion.objectToBytes(reply), m_clientSocket,
@@ -110,9 +116,11 @@ public class Frontend {
 		try {
 			marshing_packet = new DatagramPacket(buf, buf.length, address, port);
 			socket.send(marshing_packet);
-		} catch (UnknownHostException e1) {
+		} catch (NullPointerException e) {
+			
+		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block
-			e1.printStackTrace();
+			e.printStackTrace();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			System.err.println("Server offline! (Frontend.sendMessage())");
@@ -122,7 +130,7 @@ public class Frontend {
 	public DatagramPacket recieveMessage(DatagramSocket socket) {
 		// ta emot meddelande fr�n en client
 
-		byte[] buf = new byte[1024];
+		byte[] buf = new byte[8192];
 		DatagramPacket marshing_packet = new DatagramPacket(buf, buf.length);
 		try {
 			socket.receive(marshing_packet);

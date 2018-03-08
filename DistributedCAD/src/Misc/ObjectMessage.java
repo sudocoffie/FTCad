@@ -8,9 +8,10 @@ import Misc.Message.Type;
 
 public class ObjectMessage extends Message{
 	protected GObject m_object;
-	public ObjectMessage(Type type, InetAddress address, int port, GObject object) {
-		super(type,address,port);
+	public ObjectMessage(InetAddress address, int port, GObject object) {
+		super(address,port);
 		m_object = object;
+		m_type = Type.OBJECTMESSAGE;
 		// TODO Auto-generated constructor stub
 	}
 	

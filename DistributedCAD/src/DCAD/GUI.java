@@ -16,6 +16,7 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.ListIterator;
 import javax.swing.JButton;
@@ -38,7 +39,7 @@ public class GUI extends JFrame implements WindowListener, ActionListener, Mouse
 	private GObject current = null;
 
 	private LinkedList<GObject> objectList = new LinkedList<GObject>();
-	private ServerConnection connection = new ServerConnection(objectList);
+	private ServerConnection connection = new ServerConnection(this);
 
 	public GUI(int xpos, int ypos) {
 		setSize(xpos, ypos);
@@ -192,6 +193,10 @@ public class GUI extends JFrame implements WindowListener, ActionListener, Mouse
 		if (current != null) {
 			current.draw(g);
 		}
+	}
+	
+	public LinkedList<GObject> getObjects(){
+		return objectList;
 	}
 
 	public void paint(Graphics g) {

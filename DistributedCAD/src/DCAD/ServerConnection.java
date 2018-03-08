@@ -22,18 +22,20 @@ import java.util.concurrent.TimeUnit;
 
 import Misc.Message;
 import Misc.MessageConvertion;
+import Misc.ObjectListMessage;
 import Misc.ObjectMessage;
 import Misc.ReplyMessage;
 import Misc.StandardMessage;
 
 public class ServerConnection implements Runnable {
-	private LinkedList<GObject> m_objectList;
-	private LinkedBlockingQueue<Message> m_blockedMessage;
+	private GUI m_gui;
+	private LinkedBlockingQueue<ReplyMessage> m_replyMessages;
 	private DatagramSocket m_socket;
 	private InetAddress m_address;
 	private int m_port;
-	public ServerConnection(LinkedList<GObject> objectList) {
-		m_objectList = objectList;
+	private boolean m_initiated = false;
+	public ServerConnection(GUI gui) {
+		m_gui = gui;
 		
 		BufferedReader frontendConfig = null;
 		try {
@@ -57,7 +59,7 @@ public class ServerConnection implements Runnable {
 			e1.printStackTrace();
 		}
 		
-		m_blockedMessage = new LinkedBlockingQueue<>();
+		m_replyMessages = new LinkedBlockingQueue<>();
 		try {
 			m_socket = new DatagramSocket();
 		} catch (SocketException e) {
@@ -65,28 +67,29 @@ public class ServerConnection implements Runnable {
 			e.printStackTrace();
 		}
 		new Thread(this).start();
-		StandardMessage message = new StandardMessage(Message.Type.StandardMessage, InetAddress.getLoopbackAddress(), m_socket.getLocalPort(), "join");
+		StandardMessage message = new StandardMessage(InetAddress.getLoopbackAddress(), m_socket.getLocalPort(), "join");
 		sendUntilResponse(message);
 	}
 	
 	public void removeObject(GObject remove) {
-		StandardMessage message = new StandardMessage(Message.Type.StandardMessage, InetAddress.getLoopbackAddress(), m_socket.getLocalPort(), "remove " + remove.getId().toString());
+		StandardMessage message = new StandardMessage(InetAddress.getLoopbackAddress(), m_socket.getLocalPort(), "remove " + remove.getId().toString());
 		sendUntilResponse(message);
 	}
 
 	public void addObject(GObject current) {
-		ObjectMessage message = new ObjectMessage(Message.Type.ObjectMessage, InetAddress.getLoopbackAddress(), m_socket.getLocalPort(), current);
+		ObjectMessage message = new ObjectMessage(InetAddress.getLoopbackAddress(), m_socket.getLocalPort(), current);
 		sendUntilResponse(message);
 	}
 
 	private void sendUntilResponse(Message message) {
 		UUID id = message.getId();
-		System.out.println(id);
+		
 		boolean recievedResponse = false;
 		while(!recievedResponse) {
 			try {
+				System.out.println(id);
 				send(message);
-				ReplyMessage response = (ReplyMessage) m_blockedMessage.poll(1000, TimeUnit.MILLISECONDS);
+				ReplyMessage response = m_replyMessages.poll(1000, TimeUnit.MILLISECONDS);
 				if(response != null && response.getReplyId().equals(id)) {
 					recievedResponse = true;
 					System.out.println(response.getReplyId());
@@ -112,10 +115,16 @@ public class ServerConnection implements Runnable {
 		}
 	}
 	
+	private void reply(Message message) {
+		ReplyMessage reply = new ReplyMessage(message.getAddress(), message.getPort(),
+				message.getId());
+		send(reply);
+	}
+	
 	@Override
 	public void run() {
 		while (true) {
-			DatagramPacket packet = new DatagramPacket(new byte[1024], 1024);
+			DatagramPacket packet = new DatagramPacket(new byte[8192], 8192);
 			try {
 				m_socket.receive(packet);
 			} catch (IOException e) {
@@ -125,31 +134,45 @@ public class ServerConnection implements Runnable {
 			Object object = MessageConvertion.bytesToObject(packet.getData());
 			if (object != null) {
 				switch (((Message) object).getType()) {
-				case ObjectMessage:
+				case OBJECTMESSAGE:
 					GObject drawObject = ((ObjectMessage) object).getObject();
 					boolean add = true;
-					for(GObject o : m_objectList) {
+					for(GObject o : m_gui.getObjects()) {
 						if(o.getId().equals(drawObject.getId()))
 							add = false;
 					}
 					if(add)
-						m_objectList.add(drawObject);
+						m_gui.getObjects().add(drawObject);
+					m_gui.repaint();
+					reply((Message) object);
 					break;
-				case StandardMessage:
+				case STANDARDMESSAGE:
 					StandardMessage message = (StandardMessage) object;
 					if(message.getMessage().startsWith("remove")) {
 						GObject remove = null;
-						for(GObject o : m_objectList) {
+						for(GObject o : m_gui.getObjects()) {
 							if(o.getId().toString().equals(message.getMessage().split(" ")[1]))
 								remove = o;
 						}
-						m_objectList.remove(remove);
+						m_gui.getObjects().remove(remove);
+						m_gui.repaint();
 					}
+					reply(message);
 					System.out.println(message.getMessage());
 					break;
-				case ReplyMessage:
+				case OBJECTLISTMESSAGE:
+					ObjectListMessage objectsMessage = (ObjectListMessage) object;
+					if(!m_initiated) {
+						GObject[] objects = objectsMessage.getObjects();
+						for(int i = 0; i < objects.length; i++)
+							m_gui.getObjects().add(objects[i]);
+						m_gui.repaint();
+					}
+					reply(objectsMessage);
+					break;
+				case REPLYMESSAGE:
 					System.out.println("reply");
-					if(!m_blockedMessage.offer((ReplyMessage)object))
+					if(!m_replyMessages.offer((ReplyMessage)object))
 						System.err.println("m_blockedMessage full! (ServerConnection.run() switch case)");
 					break;
 				default:

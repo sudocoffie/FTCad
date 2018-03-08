@@ -7,6 +7,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 
 import Misc.Message;
+import Misc.ObjectListMessage;
 import Misc.Message.Type;
 import Misc.ObjectMessage;
 import Misc.StandardMessage;
@@ -19,6 +20,7 @@ public class ReplicaConnection {
 	private ObjectOutputStream m_outStream;
 	private ArrayList<StandardMessage> m_standardMessages;
 	private ArrayList<ObjectMessage> m_objectMessages;
+	private ArrayList<ObjectListMessage> m_objectListMessages;
 	
 	public ReplicaConnection(Socket socket){
 		System.out.println("Connected to: " + socket.getPort());
@@ -33,6 +35,7 @@ public class ReplicaConnection {
 		}
 		m_standardMessages = new ArrayList<>();
 		m_objectMessages = new ArrayList<>();
+		m_objectListMessages = new ArrayList<>();
 		
 		new Thread(new Runnable(){
 				public void run(){
@@ -42,7 +45,7 @@ public class ReplicaConnection {
 	
 	public void send(Message message){
 		try {
-			if(message.getType() == Type.StandardMessage)
+			if(message.getType() == Type.STANDARDMESSAGE)
 				System.out.println("Sent: " + ((StandardMessage)message).getMessage());
 			m_outStream.flush();
 			m_outStream.writeObject(message);
@@ -58,6 +61,12 @@ public class ReplicaConnection {
 		return null;
 	}
 	
+	public ObjectListMessage getObjectListMessage(){
+		if(m_objectListMessages.size() > 0 && m_objectListMessages.get(0).getObjects() != null)
+			return m_objectListMessages.remove(0);
+		return null;
+	}
+	
 	public StandardMessage getMessage(){
 		if(m_standardMessages.size() > 0 && m_standardMessages.get(0).getMessage() != null){
 			return m_standardMessages.remove(0);
@@ -70,12 +79,16 @@ public class ReplicaConnection {
 			try {
 				Message message = (Message)m_inStream.readObject();
 				switch (message.getType()) {
-				case ObjectMessage:
+				case OBJECTMESSAGE:
 					m_objectMessages.add((ObjectMessage)message);
 					break;
-				case StandardMessage:
+				case STANDARDMESSAGE:
 					m_standardMessages.add((StandardMessage)message);
 					System.out.println("Recieved: " + ((StandardMessage)message).getMessage());
+					break;
+				case OBJECTLISTMESSAGE:
+					
+					break;
 				default:
 					break;
 				}
@@ -87,6 +100,10 @@ public class ReplicaConnection {
 				e.printStackTrace();
 			}
 		}
+	}
+	
+	public void setState(State state) {
+		m_state = state;
 	}
 	
 	public State getState(){

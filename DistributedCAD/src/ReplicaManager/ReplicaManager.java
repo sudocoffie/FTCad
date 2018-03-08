@@ -25,6 +25,7 @@ public class ReplicaManager {
 	private ArrayList<ReplicaConnection> m_replicaConnections;
 	ArrayList<InetSocketAddress> m_replicaAdresses;
 	private int m_id;
+	private Backup m_backup;
 	
 	public static void main(String[] args) {
 		new ReplicaManager(Integer.parseInt(args[0]));
@@ -102,9 +103,21 @@ public class ReplicaManager {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		int primary = new Election(m_replicaConnections).start(m_id);
-		if(primary == m_id) {
+		ReplicaConnection primary = new Election(m_replicaConnections).start(m_id);
+		if(primary == null) {
+			for(ReplicaConnection c : m_replicaConnections) {
+				if(c.getState() != ReplicaConnection.State.LAUNCHED)
+					c.setState(ReplicaConnection.State.BACKUP);
+			}
 			initFrontend();
+		}else {
+			for(ReplicaConnection c : m_replicaConnections) {
+				if(c == primary) 
+					c.setState(ReplicaConnection.State.PRIMARY);
+				else
+					c.setState(ReplicaConnection.State.BACKUP);
+			}
+			m_backup = new Backup(primary);
 		}
 	}
 
@@ -127,7 +140,13 @@ public class ReplicaManager {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		InetSocketAddress frontendAddress = new InetSocketAddress(address, port);
+		InetSocketAddress frontendAddress = null;
+		try {
+			frontendAddress = new InetSocketAddress(InetAddress.getByName(address), port);
+		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		try {
 			DatagramSocket frontendSocket = new DatagramSocket();
 			frontendSocket.connect(frontendAddress);

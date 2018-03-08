@@ -13,11 +13,11 @@ public abstract class Message implements Serializable {
 	protected UUID m_id;
 
 	public enum Type {
-		ObjectMessage, ReplyMessage, StandardMessage
+		OBJECTMESSAGE, REPLYMESSAGE, STANDARDMESSAGE, OBJECTLISTMESSAGE
 	}
 
-	public Message(Type type, InetAddress address, int port) {
-		m_type = type;
+	public Message(InetAddress address, int port) {
+		m_type = null;
 		m_address = address;
 		m_port = port;
 		m_id = UUID.randomUUID();
