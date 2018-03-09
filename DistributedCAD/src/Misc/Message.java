@@ -1,35 +1,49 @@
 package Misc;
 
 import java.io.Serializable;
-import java.net.SocketAddress;
-import java.util.ArrayList;
+import java.net.InetAddress;
+import java.util.UUID;
 
 import DCAD.GObject;
 
-public abstract class Message implements Serializable{
+public abstract class Message implements Serializable {
 	protected Type m_type;
-	protected String m_address;
+	protected InetAddress m_address;
 	protected int m_port;
-	public enum Type{
-		ObjectMessage,
-		ReplyMessage,
-		StandardMessage,
-		
-		
+	protected UUID m_id;
+
+	public enum Type {
+		OBJECTMESSAGE, REPLYMESSAGE, STANDARDMESSAGE, OBJECTLISTMESSAGE
 	}
-	public Message(Type type, String address, int port){
-	m_type = type;	
-	m_address = address;
-	m_port = port;
+
+	public Message(InetAddress address, int port) {
+		m_type = null;
+		m_address = address;
+		m_port = port;
+		m_id = UUID.randomUUID();
 	}
-	public String getAddress(){
+
+	public InetAddress getAddress() {
 		return m_address;
 	}
-	public int getPort(){
+
+	public int getPort() {
 		return m_port;
 	}
-	public Type getType(){
+	
+	public void setAddress(InetAddress address) {
+		m_address = address;
+	}
+	
+	public void setPort(int port) {
+		m_port = port;
+	}
+
+	public Type getType() {
 		return m_type;
 	}
 
+	public UUID getId() {
+		return m_id;
+	}
 }

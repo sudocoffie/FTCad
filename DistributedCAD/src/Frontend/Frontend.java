@@ -1,5 +1,6 @@
 package Frontend;
 
+import java.awt.TrayIcon.MessageType;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -13,12 +14,20 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 
+import Misc.Message;
+import Misc.Message.Type;
+import Misc.MessageConvertion;
+import Misc.ReplyMessage;
+import Misc.StandardMessage;
+
 public class Frontend {
 	private ArrayList<Integer> savePort = new ArrayList<>();
 	private int m_serverPort = 0;
 	private int m_clientPort = 0;
 	private InetAddress m_address;
 	private int m_port;
+	private DatagramSocket m_clientSocket, m_serverSocket;
+
 	public Frontend() {
 		try {
 			BufferedReader frontendConfig = new BufferedReader(new FileReader("src\\Frontend\\FrontendConfig"));
@@ -38,31 +47,27 @@ public class Frontend {
 		}
 		new Thread(new Runnable() {
 			public void run() {
-
 				try {
-
-					DatagramSocket m_serverSocket = new DatagramSocket(m_serverPort);
-					ServerListener(m_serverSocket);
+					m_serverSocket = new DatagramSocket(m_serverPort);
+					ServerListener();
 				} catch (SocketException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-
 			}
 		}).start();
 		new Thread(new Runnable() {
 			public void run() {
 				try {
-					DatagramSocket m_clientSocket = new DatagramSocket(m_clientPort);
-					ClientListener(m_clientSocket);
-					
+					m_clientSocket = new DatagramSocket(m_clientPort);
+					ClientListener();
 				} catch (SocketException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
 		}).start();
-		
+
 	}
 
 	public static void main(String[] args) {
@@ -71,56 +76,61 @@ public class Frontend {
 
 	// kapa tr�d for socket
 	// g�ra tv� metoder f�r send recieve fr�n client tr�d och server
-	private void ServerListener(DatagramSocket socket) {
-		DatagramPacket message = recieveMessage(socket);
-		// send to clients
-		if(message.getPort() != m_port)
-			m_port = message.getPort();
-		if(!message.getAddress().equals(m_address))
-			m_address = message.getAddress();
-		sendMessage(message.getData(), socket, m_address, m_port);
-
+	private void ServerListener() {
+		while (true) {
+			DatagramPacket packet = recieveMessage(m_serverSocket);
+			// send to clients
+			if (packet.getPort() != m_port)
+				m_port = packet.getPort();
+			if (!packet.getAddress().equals(m_address))
+				m_address = packet.getAddress();
+			Message message = (Message) MessageConvertion.bytesToObject(packet.getData());
+			System.out.println("S Type: " + message.getType());
+			if(message.getType() == Message.Type.STANDARDMESSAGE)
+				System.out.println(((StandardMessage)message).getMessage());
+			if (message.getAddress() != null && message.getPort() != -1)
+				sendMessage(packet.getData(), m_clientSocket, message.getAddress(), message.getPort());
+		}
 	}
 
-	private void ClientListener(DatagramSocket socket) {
+	private void ClientListener() {
 		while (true) {
-			DatagramPacket message = recieveMessage(socket);
-			boolean add = true;
-			for (Integer i : savePort) {
-				if (message.getPort() == i)
-					add = false;
-			}
-			if (add) {
-				savePort.add(message.getPort());
-				System.out.println("Client connected port: " + message.getPort());
-			}
-			for (Integer i : savePort)
-				sendMessage(message.getData(), socket,m_address, i);
+			DatagramPacket packet = recieveMessage(m_clientSocket);
+			// Reply to a message, will be similar in replica
+			Message message = (Message) MessageConvertion.bytesToObject(packet.getData());
+			System.out.println("C Type: " + message.getType());
+			if(message.getType() == Message.Type.STANDARDMESSAGE)
+				System.out.println(((StandardMessage)message).getMessage());
+			// ReplyMessage reply = new ReplyMessage(Type.ReplyMessage, packet.getAddress(),
+			// packet.getPort(), message.getId());
+			// sendMessage(MessageConvertion.objectToBytes(reply), m_clientSocket,
+			// packet.getAddress(), packet.getPort());
+			sendMessage(packet.getData(), m_serverSocket, m_address, m_port);
 		}
-
 	}
 
 	public void sendMessage(byte[] message, DatagramSocket socket, InetAddress address, int port) {
 		byte[] buf = message;
 		DatagramPacket marshing_packet;
-		
+		System.out.println(address + " " + port);
 		try {
-		
 			marshing_packet = new DatagramPacket(buf, buf.length, address, port);
 			socket.send(marshing_packet);
-		} catch (UnknownHostException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		} catch (IOException e) {
+		} catch (NullPointerException e) {
+			
+		} catch (UnknownHostException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			System.err.println("Server offline! (Frontend.sendMessage())");
 		}
 	}
 
 	public DatagramPacket recieveMessage(DatagramSocket socket) {
 		// ta emot meddelande fr�n en client
 
-		byte[] buf = new byte[1024];
+		byte[] buf = new byte[8192];
 		DatagramPacket marshing_packet = new DatagramPacket(buf, buf.length);
 		try {
 			socket.receive(marshing_packet);
