@@ -21,7 +21,7 @@ import Misc.Message.Type;
 import Misc.MessageConvertion;
 import Misc.ReplyMessage;
 
-public class ReplicaManager implements Runnable {
+public class ReplicaManager {
 	private ArrayList<ReplicaConnection> m_replicaConnections;
 	private ArrayList<Thread> m_replicaConnectionThreads;
 	ArrayList<InetSocketAddress> m_replicaAdresses;
@@ -29,14 +29,13 @@ public class ReplicaManager implements Runnable {
 	private Backup m_backup;
 
 	public static void main(String[] args) {
-		new Thread(new ReplicaManager(Integer.parseInt(args[0]))).start();
+		new ReplicaManager(Integer.parseInt(args[0]));
 	}
 
 	/**
 	 * Constructor
 	 * 
-	 * @param id
-	 *            From start parameter
+	 * @param id From start parameter
 	 */
 	public ReplicaManager(int id) {
 		m_id = id;
@@ -111,7 +110,6 @@ public class ReplicaManager implements Runnable {
 		if (m_id != m_replicaAdresses.size() - 1) {
 			System.out.println(m_id + ": 2");
 			try {
-				System.out.println(m_replicaAdresses.toString());
 				ServerSocket serverSocket = new ServerSocket(m_replicaAdresses.get(m_id).getPort());
 				for (int i = m_id + 1; i < m_replicaAdresses.size(); i++) {
 					ReplicaConnection r = new ReplicaConnection(serverSocket.accept());
@@ -197,14 +195,14 @@ public class ReplicaManager implements Runnable {
 			e1.printStackTrace();
 		}
 	}
-
-	@Override
-	public void run() {
+	
+	public void update () {
 		boolean running = true;
 		while (running) {
-			for (Thread t : m_replicaConnectionThreads) {
-				if(!t.isAlive())
-					running = false;
+			try {
+				Thread.sleep(5000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 			}
 		}
 	}

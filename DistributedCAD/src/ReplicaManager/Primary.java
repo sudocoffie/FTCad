@@ -35,19 +35,21 @@ public class Primary implements Runnable {
 		m_clients = new ArrayList<>();
 		init(connections, socket, address);
 	}
-	
-	public Primary(ArrayList<ReplicaConnection> connections, DatagramSocket socket, InetSocketAddress address, ArrayList<GObject> objects, ArrayList<String> clients) {
+
+	public Primary(ArrayList<ReplicaConnection> connections, DatagramSocket socket, InetSocketAddress address,
+			ArrayList<GObject> objects, ArrayList<String> clients) {
 		m_objects = objects;
 		m_clients = clients;
 		init(connections, socket, address);
 	}
-	
+
 	private void init(ArrayList<ReplicaConnection> connections, DatagramSocket socket, InetSocketAddress address) {
 		m_connection = connections;
 		m_socket = socket;
 		m_address = address;
-		
+
 		m_replyMessages = new LinkedBlockingQueue<>();
+
 		new Thread(new Runnable() {
 			public void run() {
 				while (true) {
@@ -93,11 +95,12 @@ public class Primary implements Runnable {
 									+ " " + standardMessage.getPort();
 							m_clients.add(client);
 							sendToAllBackups(new StandardMessage(null, -1, client));
-							if(m_objects.size() > 0) {
+							if (m_objects.size() > 0) {
 								GObject[] objects = new GObject[m_objects.size()];
-								for(int i = 0; i < m_objects.size(); i++)
+								for (int i = 0; i < m_objects.size(); i++)
 									objects[i] = m_objects.get(i);
-								ObjectListMessage objectListMessage = new ObjectListMessage(message.getAddress(), message.getPort(), objects);
+								ObjectListMessage objectListMessage = new ObjectListMessage(message.getAddress(),
+										message.getPort(), objects);
 								ArrayList<String> clientReply = new ArrayList<>();
 								clientReply.add(client);
 								sendUntilReply(objectListMessage, clientReply);
@@ -107,7 +110,6 @@ public class Primary implements Runnable {
 					} else if (standardMessage.getMessage().startsWith("remove")) {
 						removeMessage(standardMessage);
 						System.out.println("you removed " + standardMessage.getMessage());
-
 					}
 					reply(message);
 					// join ett meddelande "join"
@@ -143,7 +145,7 @@ public class Primary implements Runnable {
 				System.out.println(m_address.getAddress() + " " + m_address.getPort());
 
 			} catch (PortUnreachableException e) {
-				
+
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -178,27 +180,28 @@ public class Primary implements Runnable {
 					}
 					ArrayList<ReplyMessage> addToList = new ArrayList<>();
 					ReplyMessage reply;
-					while((reply = m_replyMessages.poll()) != null) {
-						if(reply.getReplyId().equals(message.getId())) {
+					while ((reply = m_replyMessages.poll()) != null) {
+						if (reply.getReplyId().equals(message.getId())) {
 							String remove = null;
 							dcCounter = 0;
 							for (String client : notReplied) {
-								System.out.println(client.split(" ")[1] + "=" + message.getAddress().toString() + "\n" +
-										Integer.parseInt(client.split(" ")[2]) + "=" + message.getPort());
-								if(client.split(" ")[1].equals(message.getAddress().toString()) && Integer.parseInt(client.split(" ")[2]) == message.getPort()) {
+								System.out.println(client.split(" ")[1] + "=" + message.getAddress().toString() + "\n"
+										+ Integer.parseInt(client.split(" ")[2]) + "=" + message.getPort());
+								if (client.split(" ")[1].equals(message.getAddress().toString())
+										&& Integer.parseInt(client.split(" ")[2]) == message.getPort()) {
 									remove = client;
 								}
 							}
 							notReplied.remove(remove);
 						} else
 							addToList.add(reply);
-							
+
 					}
 					m_replyMessages.addAll(addToList);
 					dcCounter++;
-					if(dcCounter > 5 && clients.size() > notReplied.size()) {
+					if (dcCounter > 5 && clients.size() > notReplied.size()) {
 						m_clients.removeAll(notReplied);
-						for(String m : notReplied) {
+						for (String m : notReplied) {
 							StandardMessage sendMessage = new StandardMessage("removeClient " + m);
 							sendToAllBackups(sendMessage);
 						}
@@ -216,8 +219,7 @@ public class Primary implements Runnable {
 	}
 
 	private void reply(Message message) {
-		ReplyMessage reply = new ReplyMessage(message.getAddress(), message.getPort(),
-				message.getId());
+		ReplyMessage reply = new ReplyMessage(message.getAddress(), message.getPort(), message.getId());
 		sendMessage(MessageConvertion.objectToBytes(reply), m_socket, m_address.getAddress(), m_address.getPort());
 	}
 
@@ -238,10 +240,8 @@ public class Primary implements Runnable {
 			m_packet = new DatagramPacket(buf, buf.length, address, port);
 			socket.send(m_packet);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
 	}
 
 	private void removeMessage(StandardMessage message) {

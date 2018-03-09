@@ -85,7 +85,7 @@ public class Frontend {
 			Message message = (Message) MessageConvertion.bytesToObject(packet.getData());
 			System.out.println("S Type: " + message.getType());
 			if(message.getType() == Message.Type.STANDARDMESSAGE)
-				System.out.println(((StandardMessage)message).getMessage());
+				System.out.println(((StandardMessage)message).getMessage() + " to ");
 			if (message.getAddress() != null && message.getPort() != -1)
 				sendMessage(packet.getData(), m_clientSocket, message.getAddress(), message.getPort());
 		}

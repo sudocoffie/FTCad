@@ -87,11 +87,13 @@ public class ReplicaConnection implements Runnable {
 			default:
 				break;
 			}
+			
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		} catch (Exception e) {
 			// Server crashed
 			e.printStackTrace();
+			running = false;
 		}
 	}
 	
