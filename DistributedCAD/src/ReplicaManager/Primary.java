@@ -225,7 +225,6 @@ public class Primary implements Runnable {
 
 	private void sendToAllBackups(Message message) {
 		// send backups
-
 		for (ReplicaConnection searchForBackup : m_connection) {
 			if (searchForBackup.getState() == ReplicaConnection.State.BACKUP) {
 				searchForBackup.send(message);
@@ -245,7 +244,6 @@ public class Primary implements Runnable {
 	}
 
 	private void removeMessage(StandardMessage message) {
-		// TODO Auto-generated method stub
 		GObject remove = null;
 		for (GObject o : m_objects) {
 			if (o.getId().toString().equals(message.getMessage().split(" ")[1]))

@@ -7,7 +7,7 @@ import Misc.Message.Type;
 
 public class StandardMessage extends Message{
 	protected String m_message;
-	public StandardMessage(InetAddress address, int port, String message ) {
+	public StandardMessage(InetAddress address, int port, String message) {
 		super(address, port);
 		m_message = message;
 		m_type = Type.STANDARDMESSAGE;

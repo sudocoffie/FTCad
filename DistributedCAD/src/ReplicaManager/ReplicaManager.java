@@ -20,6 +20,7 @@ import Misc.Message;
 import Misc.Message.Type;
 import Misc.MessageConvertion;
 import Misc.ReplyMessage;
+import Misc.StandardMessage;
 
 public class ReplicaManager {
 	private ArrayList<ReplicaConnection> m_replicaConnections;
@@ -29,7 +30,10 @@ public class ReplicaManager {
 	private Backup m_backup;
 
 	public static void main(String[] args) {
-		new ReplicaManager(Integer.parseInt(args[0]));
+		if(Integer.parseInt(args[1]) != 0)
+			new ReplicaManager(Integer.parseInt(args[0]), true);
+		else
+			new ReplicaManager(Integer.parseInt(args[0]));
 	}
 
 	/**
@@ -45,7 +49,29 @@ public class ReplicaManager {
 		initReplicaServerSockets();
 		startElectionProcess();
 	}
-
+	
+	/**
+	 * Overload Constructor
+	 * 
+	 * @param id
+	 * @param restart
+	 */
+	public ReplicaManager(int id, boolean restart) {
+		m_id = id;
+		m_replicaConnectionThreads = new ArrayList<>();
+		m_replicaConnections = new ArrayList<>();
+		m_replicaAdresses = getAddressesFromConfig();
+		initReplicaServerSockets();
+		notifyAllElection();
+		startElectionProcess();
+	}
+	
+	public void notifyAllElection() {
+		for(ReplicaConnection c : m_replicaConnections) {
+			c.send(new StandardMessage("ELECTIONMESSAGE"));
+		}
+	}
+	
 	/**
 	 * Execute the election process for choosing the primary server
 	 * 
@@ -112,7 +138,7 @@ public class ReplicaManager {
 			try {
 				ServerSocket serverSocket = new ServerSocket(m_replicaAdresses.get(m_id).getPort());
 				for (int i = m_id + 1; i < m_replicaAdresses.size(); i++) {
-					ReplicaConnection r = new ReplicaConnection(serverSocket.accept());
+					ReplicaConnection r = new ReplicaConnection(serverSocket.accept(), this);
 					m_replicaConnections.add(r);
 					m_replicaConnectionThreads.add(new Thread(r));
 					m_replicaConnectionThreads.get(m_replicaConnectionThreads.size() - 1).start();
@@ -143,7 +169,8 @@ public class ReplicaManager {
 						}
 					}
 				}
-				ReplicaConnection r = new ReplicaConnection(socket);
+				
+				ReplicaConnection r = new ReplicaConnection(socket, this);
 				m_replicaConnections.add(r);
 				m_replicaConnectionThreads.add(new Thread(r));
 				m_replicaConnectionThreads.get(m_replicaConnectionThreads.size() - 1).start();
@@ -193,17 +220,6 @@ public class ReplicaManager {
 			new Primary(m_replicaConnections, frontendSocket, frontendAddress);
 		} catch (SocketException e1) {
 			e1.printStackTrace();
-		}
-	}
-	
-	public void update () {
-		boolean running = true;
-		while (running) {
-			try {
-				Thread.sleep(5000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
 		}
 	}
 }

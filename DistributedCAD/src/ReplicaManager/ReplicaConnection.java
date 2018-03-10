@@ -3,6 +3,7 @@ package ReplicaManager;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
@@ -18,16 +19,18 @@ public class ReplicaConnection implements Runnable {
 	private State m_state;
 	private boolean running = true;
 	private Socket m_socket;
+	private ReplicaManager m_replicaManager;
 	private ObjectInputStream m_inStream;
 	private ObjectOutputStream m_outStream;
 	private ArrayList<StandardMessage> m_standardMessages;
 	private ArrayList<ObjectMessage> m_objectMessages;
 	private ArrayList<ObjectListMessage> m_objectListMessages;
 	
-	public ReplicaConnection(Socket socket){
+	public ReplicaConnection(Socket socket, ReplicaManager replicaManager){
 		System.out.println("Connected to: " + socket.getPort());
 		m_state = State.INTEGRATED;
 		m_socket = socket;
+		m_replicaManager = replicaManager;
 		try {
 			m_outStream = new ObjectOutputStream(socket.getOutputStream());
 			m_inStream = new ObjectInputStream(socket.getInputStream());
@@ -78,7 +81,13 @@ public class ReplicaConnection implements Runnable {
 				m_objectMessages.add((ObjectMessage) message);
 				break;
 			case STANDARDMESSAGE:
-				m_standardMessages.add((StandardMessage) message);
+				StandardMessage m = (StandardMessage) message;
+				m_standardMessages.add(m);
+				
+				if (m.getMessage().equals("ELECTIONMESSAGE")) {
+					send(message);
+					m_replicaManager.startElectionProcess();
+				}
 				System.out.println("Recieved: " + ((StandardMessage) message).getMessage());
 				break;
 			case OBJECTLISTMESSAGE:
@@ -90,10 +99,24 @@ public class ReplicaConnection implements Runnable {
 			
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
-		} catch (Exception e) {
+		} catch (SocketException e) {
 			// Server crashed
-			e.printStackTrace();
+			System.out.println("Lost connection... retryaaaa");
+			//getNewSocketConnection();
 			running = false;
+		} catch (Exception e) {
+			
+		}
+	}
+	
+	public void getNewSocketConnection() {
+		try {
+			ServerSocket serverSocket = new ServerSocket(m_socket.getPort());
+			m_socket.close();
+			m_socket = serverSocket.accept();
+			System.out.println("Did this work?");
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 	
