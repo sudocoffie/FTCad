@@ -39,10 +39,8 @@ public class Frontend {
 			}
 			frontendConfig.close();
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		new Thread(new Runnable() {
@@ -87,7 +85,7 @@ public class Frontend {
 			Message message = (Message) MessageConvertion.bytesToObject(packet.getData());
 			System.out.println("S Type: " + message.getType());
 			if(message.getType() == Message.Type.STANDARDMESSAGE)
-				System.out.println(((StandardMessage)message).getMessage());
+				System.out.println(((StandardMessage)message).getMessage() + " to ");
 			if (message.getAddress() != null && message.getPort() != -1)
 				sendMessage(packet.getData(), m_clientSocket, message.getAddress(), message.getPort());
 		}
@@ -117,12 +115,11 @@ public class Frontend {
 			marshing_packet = new DatagramPacket(buf, buf.length, address, port);
 			socket.send(marshing_packet);
 		} catch (NullPointerException e) {
-			
+			e.printStackTrace();
 		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
+			// TODO ServerReconnect crash
 			System.err.println("Server offline! (Frontend.sendMessage())");
 		}
 	}
@@ -132,14 +129,13 @@ public class Frontend {
 
 		byte[] buf = new byte[8192];
 		DatagramPacket marshing_packet = new DatagramPacket(buf, buf.length);
+		
 		try {
 			socket.receive(marshing_packet);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
 		return marshing_packet;
-
 	}
 }

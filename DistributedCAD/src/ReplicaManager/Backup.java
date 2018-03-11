@@ -8,6 +8,7 @@ import Misc.ObjectMessage;
 import Misc.StandardMessage;
 
 public class Backup implements Runnable {
+	
 	private ReplicaConnection m_primary;
 	private boolean m_primaryAlive;
 	private ArrayList<GObject> m_objects;
