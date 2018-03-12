@@ -53,6 +53,13 @@ public class Backup implements Runnable {
 					for (int i = 0; i < objects.length; i++)
 						m_objects.add(objects[i]);
 				}
+				if(sMessage == null && oLMessage == null && oMessage == null) {
+					try {
+						Thread.sleep(50);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
 			} else {
 				try {
 					Thread.sleep(100);

@@ -119,6 +119,8 @@ public class ReplicaConnection implements Runnable {
 				default:
 					break;
 				}
+			} else {
+				Thread.sleep(100);
 			}
 
 		} catch (ClassNotFoundException e) {
