@@ -4,8 +4,6 @@ import java.io.Serializable;
 import java.net.InetAddress;
 import java.util.UUID;
 
-import DCAD.GObject;
-
 public abstract class Message implements Serializable {
 	protected Type m_type;
 	protected InetAddress m_address;
@@ -30,11 +28,11 @@ public abstract class Message implements Serializable {
 	public int getPort() {
 		return m_port;
 	}
-	
+
 	public void setAddress(InetAddress address) {
 		m_address = address;
 	}
-	
+
 	public void setPort(int port) {
 		m_port = port;
 	}
